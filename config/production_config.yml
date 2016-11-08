@@ -10,10 +10,10 @@ server:
           archivedFileCount: 14
   applicationConnectors:
     - type: http
-      port: 81
+      port: 80
   adminConnectors:
     - type: http
-      port: 8082
+      port: 8081
 
 #Only log system messages to this
 logging:
