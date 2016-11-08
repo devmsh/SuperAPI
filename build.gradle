@@ -1,6 +1,7 @@
 apply plugin: "java"
 apply plugin: "application"
 apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'org.hidetake.ssh'
 
 buildscript {
     repositories {
@@ -26,6 +27,17 @@ ext {
     LOCAL_CONFIG_FILE = "$CONFIG_DIR/local_config.yml"
     LOCAL_APP_BIN_PATH = "$project.buildDir/libs/$APP_BIN_NAME"
     MAIN_CLASS = "Main"
+
+    // remote server related props
+    PROD_IP = "139.59.158.197"
+    PROD_USER = "root"
+    PROD_KEY_PATH = project.hasProperty("identity") ? project.property("identity") : ""
+    APP_IDENTIFIER = project.hasProperty("app_id") ? project.property("app_id") : ""
+    REMOTE_DEPLOY_FOLDER_ROOT = "/opt/superapi-mohammed"
+    CONFIG_NAME = "production_config.yml"
+    LOCAL_PROD_CONFIG_PATH = "$CONFIG_DIR/$CONFIG_NAME"
+    REMOTE_APP_DEPLOY_PATH = "$REMOTE_DEPLOY_FOLDER_ROOT/$APP_BIN_NAME"
+    REMOTE_CONFIG_DEPLOY_PATH = "$REMOTE_DEPLOY_FOLDER_ROOT/$CONFIG_NAME"
 
     properties.each { prop ->
         println prop
@@ -125,9 +137,6 @@ task deployAPI << {
 
             def startAPI = "tmux new -A -s $APP_IDENTIFIER -d " +
                     "java " +
-                    "-Dnewrelic.config.app_name='$APP_NAME-all;$APP_NAME-$APP_IDENTIFIER' " +
-                    "-Dnewrelic.environment=production  " +
-                    "-javaagent:/opt/newrelic/newrelic.jar " +
                     "-jar $REMOTE_APP_DEPLOY_PATH server $REMOTE_CONFIG_DEPLOY_PATH"
             println startAPI
             execute(startAPI)
@@ -135,9 +144,9 @@ task deployAPI << {
             //Check for healthcheck in a loop
             sleep(3000)
             println "Starting healthchecks"
-            execute("ps -fC tmux | grep $APP_NAME-$APP_IDENTIFIER")
+            execute("ps -fC tmux | grep $APP_IDENTIFIER")
             println "Found process"
-            execute("wget -O - --retry-connrefused --tries=10 http://127.0.0.1:8081/ping > /dev/null")
+            execute("wget -O - --retry-connrefused --tries=10 http://127.0.0.1:8082/ping > /dev/null")
             println "Pong received"
         }
 
